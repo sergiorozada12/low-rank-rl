@@ -3,7 +3,7 @@ import numpy as np
 from utils import Mapper, QLearning, Saver, PendulumEnv
 
 
-parameters_file = "experiments/exp_1_q_learning.json"
+parameters_file = "experiments/exp_2_q_learning.json"
 with open(parameters_file) as j:
     parameters = json.loads(j.read())
 
@@ -56,6 +56,6 @@ for i in range(parameters["n_simulations"]):
     final_mean_reward.append(r)
 
 
-saver.save_to_pickle("results/exp_1_q_learning_steps.pickle", steps)
-saver.save_to_pickle("results/exp_1_q_learning_rewards.pickle", rewards)
-saver.save_to_pickle("results/exp_1_q_learning_final_reward.pickle", final_mean_reward)
+saver.save_to_pickle("results/exp_2_q_learning_steps.pickle", steps)
+saver.save_to_pickle("results/exp_2_q_learning_rewards.pickle", rewards)
+saver.save_to_pickle("results/exp_2_q_learning_final_reward.pickle", final_mean_reward)

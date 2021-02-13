@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib import rcParams
 from utils import Saver, TestUtils
 
 from matplotlib import rcParams
