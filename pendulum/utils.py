@@ -432,6 +432,7 @@ class LinearLearning:
     def __init__(self,
                  env,
                  state_set,
+                 action_set,
                  state_map,
                  state_reverse_map,
                  action_map,
@@ -489,13 +490,14 @@ class LinearLearning:
         self.action_map = action_map
         self.action_reverse_map = action_reverse_map
         self.state_set = state_set
+        self.action_set = action_set
         self.step_action = step_action
         self.step_state = step_state
         self.decimal_action = decimal_action
         self.decimal_state = decimal_state
 
-        self.size = len(self.state_set) * len(self.action_set) + len(self.action_map)
-        self.w = np.random.rand(self.size, 1)
+        self.size = len(self.state_set) * len(self.action_set) + len(self.action_set)
+        self.w = np.random.rand(self.size, 1)/10
 
         self.cumulative_reward = []
         self.steps = []
@@ -583,7 +585,6 @@ class LinearLearning:
                 a, a_idx = self.choose_action(a_idx)
                 s_prime, r, done, info = self.env.step(a)
                 s_prime_idx = self.get_s_idx(s_prime)
-
                 theta = np.arctan(s_prime[1] / s_prime[0])
                 done = True if ((theta > np.pi / 4) | (theta < -np.pi / 4)) else False
                 r = .1 - (np.arccos(s[0]) ** 2 + s[2] ** 2 + a[0] ** 2)
@@ -641,7 +642,7 @@ class LinearLearning:
             s_prime_idx = self.get_s_idx(s_prime)
 
             theta = np.arctan(s_prime[1] / s_prime[0])
-            done = (theta > 1.0) | (theta < -1.0)
+            done = True if ((theta > np.pi / 4) | (theta < -np.pi / 4)) else False
             cum_r += .1 - (np.arccos(s[0]) ** 2 + s[2] ** 2 + a[0] ** 2)
 
             s = s_prime
@@ -673,7 +674,7 @@ class LinearLearning:
             PIL.Image.fromarray(self.env.render(mode='rgb_array')).resize((320, 420))
 
             theta = np.arctan(s_prime[1] / s_prime[0])
-            done = (theta > 1.0) | (theta < -1.0)
+            done = True if ((theta > np.pi / 4) | (theta < -np.pi / 4)) else False
 
             if done:
                 break

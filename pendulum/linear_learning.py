@@ -18,21 +18,22 @@ rewards = []
 final_mean_reward = []
 
 for i in range(parameters["n_simulations"]):
-    lr_learner = LowRankLearning(env=env,
-                                 state_set=parameters["state_set"],
-                                 state_map=state_map,
-                                 action_map=action_map,
-                                 state_reverse_map=state_reverse_map,
-                                 action_reverse_map=action_reverse_map,
-                                 decimal_state=parameters["decimal_state"],
-                                 decimal_action=parameters["decimal_action"],
-                                 step_state=parameters["step_state"],
-                                 step_action=parameters["step_action"],
-                                 episodes=parameters["episodes"],
-                                 max_steps=parameters["max_steps"],
-                                 epsilon=parameters["epsilon"],
-                                 alpha=parameters["alpha"],
-                                 gamma=parameters["gamma"])
+    lr_learner = LinearLearning(env=env,
+                                state_set=parameters["state_set"],
+                                action_set=parameters["action_set"],
+                                state_map=state_map,
+                                action_map=action_map,
+                                state_reverse_map=state_reverse_map,
+                                action_reverse_map=action_reverse_map,
+                                decimal_state=parameters["decimal_state"],
+                                decimal_action=parameters["decimal_action"],
+                                step_state=parameters["step_state"],
+                                step_action=parameters["step_action"],
+                                episodes=parameters["episodes"],
+                                max_steps=parameters["max_steps"],
+                                epsilon=parameters["epsilon"],
+                                alpha=parameters["alpha"],
+                                gamma=parameters["gamma"])
 
     lr_learner.train()
 

@@ -2,7 +2,7 @@ import json
 import numpy as np
 from utils import Mapper, LowRankLearning, Saver, PendulumEnv
 
-parameters_file = "experiments/exp_1_lr_learning.json"
+parameters_file = "experiments/exp_2_lr_learning.json"
 with open(parameters_file) as j:
     parameters = json.loads(j.read())
 
@@ -57,6 +57,6 @@ for i in range(parameters["n_simulations"]):
     rewards.append(lr_learner.greedy_r)
     final_mean_reward.append(r)
 
-saver.save_to_pickle("results/exp_1_lr_learning_steps.pickle", steps)
-saver.save_to_pickle("results/exp_1_lr_learning_rewards.pickle", rewards)
-saver.save_to_pickle("results/exp_1_lr_learning_final_reward.pickle", final_mean_reward)
+saver.save_to_pickle("results/exp_2_lr_learning_steps.pickle", steps)
+saver.save_to_pickle("results/exp_2_lr_learning_rewards.pickle", rewards)
+saver.save_to_pickle("results/exp_2_lr_learning_final_reward.pickle", final_mean_reward)
