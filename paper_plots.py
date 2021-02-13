@@ -80,29 +80,36 @@ final_mean_reward_lr = saver.load_from_pickle("pendulum/results/exp_1_lr_learnin
 steps_lr_reg = saver.load_from_pickle("pendulum/results/exp_2_lr_learning_steps.pickle")
 final_mean_reward_lr_reg = saver.load_from_pickle("pendulum/results/exp_2_lr_learning_final_reward.pickle")
 
+steps_lr_res = saver.load_from_pickle("results/exp_1_lr_res_learning_steps.pickle")
+final_mean_reward_lr_res = saver.load_from_pickle("results/exp_1_lr_res_learning_final_reward.pickle")
+
 q_large_median_steps = np.median(steps_q_large, axis=0) + 1
 q_small_median_steps = np.median(steps_q_small, axis=0) + 1
 lr_median_steps = np.median(steps_lr, axis=0) + 1
 lr_reg_median_steps = np.median(steps_lr_reg, axis=0) + 1
+lr_res_median_steps = np.median(steps_lr_res, axis=0)
 
 q_large_mean_final_rewards = np.median(final_mean_reward_q_large)
 q_small_mean_final_rewards = np.median(final_mean_reward_q_small)
 lr_mean_final_rewards = np.median(final_mean_reward_lr)
 lr_reg_mean_final_rewards = np.median(final_mean_reward_lr_reg)
+lr_res_mean_final_rewards = np.median(final_mean_reward_lr_res)
 
 size = len(q_large_median_steps)*100
 
 legend = ["Q-learning - 86,961 params.",
           "Q-learning - 10,605 params.",
           "LR(rank 3) - 6,486 params.",
-          "LR reg. - 10,810 params."]
+          "LR reg. - 10,810 params.",
+          "LR res. (rank 10) - 5,900 params"]
 
-colors = ["b", "r", "g", "k"]
+colors = ["b", "r", "g", "k", "y"]
 
 steps = [q_large_median_steps,
 		 q_small_median_steps,
 		 lr_median_steps,
-		 lr_reg_median_steps]
+		 lr_reg_median_steps,
+		 lr_res_median_steps]
 
 for i in range(len(colors)):
     axes[1, 0].plot(np.arange(0, size, 100), steps[i], c=colors[i], linewidth=0.7)
@@ -116,7 +123,8 @@ axes[1, 0].grid(True)
 final_rewards = [q_large_mean_final_rewards,
 				 q_small_mean_final_rewards,
 				 lr_mean_final_rewards,
-           		 lr_reg_mean_final_rewards]
+           		 lr_reg_mean_final_rewards,
+           		 lr_res_mean_final_rewards]
 
 axes[1, 1].grid(True, axis='y')
 axes[1, 1].bar(x=np.arange(len(final_rewards)), height=np.abs(final_rewards), alpha=.6, color=colors)

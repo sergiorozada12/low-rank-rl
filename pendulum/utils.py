@@ -4,6 +4,7 @@ import PIL
 import itertools
 import pickle
 import gym
+import random
 from gym import spaces
 from gym.utils import seeding
 
@@ -683,6 +684,196 @@ class LinearLearning:
         self.env.close()
 
 
+class LowRankReshape:
+    def __init__(self,
+                 env,
+                 mapper,
+                 k,
+                 episodes=100000,
+                 max_steps=1000,
+                 epsilon=.9,
+                 decay=1.0,
+                 alpha=.9,
+                 gamma=.9):
+
+        """
+        :param env: gym.envs
+            OpenAI Gym environment.
+        :param mapper: Class
+            Mapper class that helps implementing the env.
+        :param k: int
+            Dimension of the latent space.
+        :param episodes: int
+            Number of episodes.
+        :param max_steps: int
+            Maximum number of steps per episode.
+        :param epsilon: float
+            Probability of taking an exploratory action.
+        :param decay: float
+            Decayment rate of epsilon.
+        :param alpha: float
+            Learning rate.
+        :param gamma: float
+            Discount factor.
+        """
+
+        self.env = env
+        self.mapper = mapper
+        self.k = k
+        self.episodes = episodes
+        self.max_steps = max_steps
+        self.epsilon = epsilon
+        self.decay = decay
+        self.alpha = alpha
+        self.gamma = gamma
+        self.actions = np.arange(-2.0, 2.1, 0.1)
+
+        self.L = np.random.rand(self.mapper.n_rows, k) / 10
+        self.R = np.random.rand(k, self.mapper.n_cols) / 10
+        self.Q_hat = self.L @ self.R
+
+        self.rewards = []
+        self.steps = []
+        self.greedy_r = []
+        self.greedy_steps = []
+        self.l_norms = []
+        self.r_norms = []
+
+    def get_max_action(self, state):
+        """
+        :param state: np.array
+            Environment state.
+        :return int
+            Action to take.
+        """
+
+        qs = []
+        self.mapper.update_state_key(state)
+
+        for a in self.actions:
+            self.mapper.update_action_key([a])
+            idx = self.mapper.get_matrix_index()
+            qs.append(self.Q_hat[idx])
+        return [self.actions[np.argmax(qs)]]
+
+    def choose_action(self, state):
+        """
+        :param state: np.array
+            Environment state.
+        :return int
+            Action to take.
+        """
+
+        if np.random.rand() < self.epsilon:
+            return self.env.action_space.sample()
+
+        return self.get_max_action(state)
+
+    def train(self):
+
+        for episode in range(self.episodes):
+
+            s = self.env.reset(upright=True)
+            cumm_reward = 0
+
+            for step in range(self.max_steps):
+
+                a = self.choose_action(s)
+
+                s_prime, r, done, _ = self.env.step(a)
+
+                theta = np.arctan(s_prime[1] / s_prime[0])
+                done = True if ((theta > np.pi / 4) | (theta < -np.pi / 4)) else False
+                r = .1 - (np.arccos(s[0]) ** 2 + s[2] ** 2 + a[0] ** 2)
+
+                cumm_reward += r
+
+                self.mapper.update_state_key(s)
+                self.mapper.update_action_key(a)
+                mat_idx = self.mapper.get_matrix_index()
+
+                self.mapper.update_state_key(s_prime)
+                self.mapper.update_action_key(self.get_max_action(s_prime))
+                mat_idx_prime = self.mapper.get_matrix_index()
+
+                q_h = self.Q_hat[mat_idx]
+                q_b = r + self.gamma * self.Q_hat[mat_idx_prime]
+
+                self.L[mat_idx[0], :] += self.alpha * (q_b - q_h) * self.R[:, mat_idx[1]]/np.linalg.norm(self.R[:, mat_idx[1]])
+                self.R[:, mat_idx[1]] += self.alpha * (q_b - q_h) * self.L[mat_idx[0], :]/np.linalg.norm(self.L[mat_idx[0], :])
+
+                s = s_prime
+
+                self.Q_hat[mat_idx[0], :] = self.L[mat_idx[0], :] @ self.R
+                self.Q_hat[:, mat_idx[1]] = self.L @ self.R[:, mat_idx[1]]
+
+                self.epsilon *= self.decay
+
+                if done:
+                    break
+
+            self.rewards.append(cumm_reward)
+            self.steps.append(step)
+            self.l_norms.append(np.linalg.norm(self.L, 'fro'))
+            self.r_norms.append(np.linalg.norm(self.R, 'fro'))
+
+            if (episode % 100) == 0:
+                r, s = self.run_greedy(self.max_steps)
+                self.greedy_r.append(r)
+                self.greedy_steps.append(s)
+
+    def run_greedy(self, n_steps):
+        """
+        :param n_steps: int
+            Number of steps of the greedy episode.
+        :return: tuple
+            Cumulative reward of the episode and number of steps.
+        """
+
+        s = self.env.reset(upright=True)
+        cum_r = 0
+
+        for step in range(n_steps):
+
+            a = self.get_max_action(s)
+            s_prime, r, done, info = self.env.step(a)
+
+            theta = np.arctan(s_prime[1] / s_prime[0])
+            done = True if ((theta > np.pi / 4) | (theta < -np.pi / 4)) else False
+            r = .1 - (np.arccos(s[0]) ** 2 + s[2] ** 2 + a[0] ** 2)
+
+            cum_r += r
+
+            if done:
+                break
+
+            s = s_prime
+
+        return cum_r, step
+
+    def test(self, n_steps):
+        """
+        :param n_steps: int
+            Number of steps of the greedy episode.
+        :return: tuple
+            Cumulative reward of the episode and number of steps.
+        """
+
+        s = self.env.reset(upright=True)
+
+        for _ in range(n_steps):
+
+            a = self.get_max_action(s)
+            s_prime, r, done, info = self.env.step(a)
+            PIL.Image.fromarray(self.env.render(mode='rgb_array')).resize((320, 420))
+
+            done = True if ((theta > np.pi / 4) | (theta < -np.pi / 4)) else False
+
+            s = s_prime
+
+        self.env.close()
+
+
 class Mapper:
     def __init__(self):
 
@@ -735,6 +926,67 @@ class Mapper:
         joint_effort = np.around(np.arange(self.min_joint_effort, self.max_joint_effort + step, step), decimal) + 0.
 
         return self.get_map([joint_effort])
+
+
+class MapperReshape:
+    def __init__(self):
+
+        self.min_theta = -1.0 # 50 grados
+        self.max_theta = 1.0 # 50 grados
+        self.min_theta_dot = -5.0
+        self.max_theta_dot = 5.0
+
+        self.min_joint_effort = -2.0
+        self.max_joint_effort = 2.0
+
+        self.step = 0.1
+        self.decimal = 1
+
+        state_key = []
+        action_key = []
+
+        theta = np.around(np.arange(self.min_theta, self.max_theta + self.step, self.step), self.decimal) + 0.
+        theta_dot = np.around(np.arange(self.min_theta_dot, self.max_theta_dot + self.step, self.step), self.decimal) + 0.
+
+        joint_effort = np.around(np.arange(self.min_joint_effort, self.max_joint_effort + self.step, self.step), self.decimal) + 0.
+
+        grid = [theta, theta_dot, joint_effort]
+
+        self.forward_map = [combination for combination in itertools.product(*grid)]
+        random.shuffle(self.forward_map)
+
+        self.n_rows = int(np.ceil(np.sqrt(len(self.forward_map))))
+        self.n_cols = self.n_rows
+        matrix_idx = []
+        for i in range(self.n_rows):
+            for j in range(self.n_cols):
+                matrix_idx.append((i, j))
+
+        self.reverse_map = dict(zip(self.forward_map, matrix_idx))
+
+    def update_state_key(self, state):
+
+        s_theta = np.arctan(state[1] / state[0])
+        s_theta_dot = state[2]
+
+        theta = np.around(self.min_theta + self.step * ((s_theta + self.max_theta) // self.step), self.decimal) + 0.
+        theta_dot = np.around(self.min_theta_dot + self.step * ((s_theta_dot + self.max_theta_dot) // self.step), self.decimal) + 0.
+
+        theta = np.clip(theta, self.min_theta, self.max_theta)
+        theta_dot = np.clip(theta_dot, self.min_theta_dot, self.max_theta_dot)
+
+        self.state_key = [theta, theta_dot]
+
+    def update_action_key(self, action):
+
+        act = np.around(self.min_joint_effort + self.step * ((action[0] + self.max_joint_effort) // self.step), self.decimal) + 0.
+        act = np.clip(act, self.min_joint_effort, self.max_joint_effort)
+
+        self.action_key = [act]
+
+    def get_matrix_index(self):
+        key = tuple(self.state_key + self.action_key)
+        return self.reverse_map[key]
 
 
 class Saver:
