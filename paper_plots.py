@@ -80,14 +80,14 @@ final_mean_reward_lr = saver.load_from_pickle("pendulum/results/exp_1_lr_learnin
 steps_lr_reg = saver.load_from_pickle("pendulum/results/exp_2_lr_learning_steps.pickle")
 final_mean_reward_lr_reg = saver.load_from_pickle("pendulum/results/exp_2_lr_learning_final_reward.pickle")
 
-steps_lr_res = saver.load_from_pickle("results/exp_1_lr_res_learning_steps.pickle")
-final_mean_reward_lr_res = saver.load_from_pickle("results/exp_1_lr_res_learning_final_reward.pickle")
+steps_lr_res = saver.load_from_pickle("pendulum/results/exp_1_lr_res_learning_steps.pickle")
+final_mean_reward_lr_res = saver.load_from_pickle("pendulum/results/exp_1_lr_res_learning_final_reward.pickle")
 
 q_large_median_steps = np.median(steps_q_large, axis=0) + 1
 q_small_median_steps = np.median(steps_q_small, axis=0) + 1
 lr_median_steps = np.median(steps_lr, axis=0) + 1
 lr_reg_median_steps = np.median(steps_lr_reg, axis=0) + 1
-lr_res_median_steps = np.median(steps_lr_res, axis=0)
+lr_res_median_steps = np.median(steps_lr_res, axis=0) + 1
 
 q_large_mean_final_rewards = np.median(final_mean_reward_q_large)
 q_small_mean_final_rewards = np.median(final_mean_reward_q_small)
